@@ -1,7 +1,7 @@
-var path = require('path'),
-	_ = require('lodash'),
-	util = require('./lib/util'),
-	parseOptions = require('./lib/parseOptions'),
+var path                   = require('path'),
+	_                      = require('lodash'),
+	util                   = require('./lib/util'),
+	parseOptions           = require('./lib/parseOptions'),
 
 	// Used to reset lodash to default template settings
 	lodashTemplateSettings = {
@@ -18,12 +18,13 @@ function makeCdnizer(opts) {
 	function cdnizer(contents) {
 
 		var canAddFallback = opts.shouldAddFallback && contents.indexOf('<head') !== -1,
-			didAddFallback = false;
+			didAddFallback = false,
+			matcherType    = opts.matcherType || 'html';
 
-		_.union(opts.matchers, util.matchers).forEach(function(m) {
-			contents = contents.replace(m.pattern, function(match, pre, url, post) {
+		_.union(opts.matchers, util.matchers[matcherType]).forEach(function (m) {
+			contents = contents.replace(m.pattern, function (match, pre, url, post) {
 				var fileInfo = util.findFileInfo(url, opts), result, params;
-				if(fileInfo) {
+				if (fileInfo) {
 					result = pre;
 					params = _.merge(util.getVersionInfo(fileInfo, opts), {
 						defaultCDNBase: opts.defaultCDNBase,
@@ -37,7 +38,7 @@ function makeCdnizer(opts) {
 					});
 					result += _.template(fileInfo.cdn || opts.defaultCDN, params, lodashTemplateSettings);
 					result += post;
-					if(canAddFallback && m.fallback && fileInfo.test) {
+					if (canAddFallback && m.fallback && fileInfo.test) {
 						result += _.template(opts.fallbackTest, params, lodashTemplateSettings);
 						didAddFallback = true;
 					}
@@ -49,8 +50,8 @@ function makeCdnizer(opts) {
 			});
 		});
 
-		if(didAddFallback) {
-			contents = contents.replace(/<link|<script|<\/head/i, function(m) {
+		if (didAddFallback) {
+			contents = contents.replace(/<link|<script|<\/head/i, function (m) {
 				return opts.fallbackScript + m;
 			});
 		}
